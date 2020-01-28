@@ -21,7 +21,6 @@ import com.uppaal.engine.Engine
 import com.uppaal.engine.EngineException
 import com.uppaal.engine.EngineStub
 import com.uppaal.engine.Problem
-import com.uppaal.gui.Main.enginePath
 import com.uppaal.model.core2.*
 import com.uppaal.model.core2.AbstractTemplate
 import com.uppaal.model.core2.Edge
@@ -48,6 +47,7 @@ import org.muml.uppaal.templates.*
 import org.muml.uppaal.templates.Location
 import org.muml.uppaal.templates.Template
 import org.muml.uppaal.types.Type
+import org.muml.uppaal.types.TypeReference
 import java.io.File
 
 object UppaalUtil {
@@ -116,6 +116,12 @@ object UppaalUtil {
         val result = DeclarationsFactory.eINSTANCE.createVariable()
         result.name = name
         return result
+    }
+
+    fun createTypeReference(type: Type): TypeReference {
+        val ref = TypesFactory.eINSTANCE.createTypeReference()
+        ref.referredType = type
+        return ref
     }
 
     @Throws(EngineException::class, IOException::class, URISyntaxException::class)
@@ -314,10 +320,44 @@ object UppaalUtil {
         return invariant
     }
 
+    fun createCompareExpression(operator: CompareOperator, firstExpr: Expression, secondExpr: Expression): CompareExpression {
+        val result = ExpressionsFactory.eINSTANCE.createCompareExpression()
+        result.operator = operator
+        result.firstExpr = firstExpr
+        result.secondExpr = secondExpr
+        return result
+    }
+
+    fun createLogicalExpression(operator: LogicalOperator, firstExpr: Expression, secondExpr: Expression): LogicalExpression {
+        val result = ExpressionsFactory.eINSTANCE.createLogicalExpression()
+        result.operator = operator
+        result.firstExpr = firstExpr
+        result.secondExpr = secondExpr
+        return result
+    }
+
+    fun chainLogicalExpression(conditions: List<Expression>, operator: LogicalOperator, emptyLiteral: String): Expression {
+        if (conditions.isEmpty()) {
+            return createLiteral(emptyLiteral)
+        } else {
+            var result: Expression? = null
+
+            for (condition in conditions) {
+                if (result == null) {
+                    result = condition
+                } else {
+                    result = createLogicalExpression(operator, result, condition)
+                }
+            }
+
+            return result!!
+        }
+    }
+
     fun toDocument(nsta: NSTA, doc: Document): Document {
         var xml = Serialization().main(nsta).toString().replace(Regex("<!DOCTYPE.*>"), "")
 
-        println(xml)
+//        println(xml)
 
         return XMLReader(CharSequenceInputStream(xml, "UTF-8")).parse(doc)!!
     }

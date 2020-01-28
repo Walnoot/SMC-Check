@@ -32,7 +32,7 @@ object EditorUtil {
         MainUI.getDocument().set(doc)
 //        MainUI.getSystemr().set(sys)
 
-		// add query to the query list so it can be checked in the GUI
+        // add query to the query list so it can be checked in the GUI
 		doc.queryList.addLast(Query(query, "Automatically generated query."))
 
         MainUI.getDocument().fire(Repository.ChangeType.UPDATED)

@@ -12,6 +12,8 @@ import org.json.simple.parser.JSONParser
 import java.io.IOException
 
 class ValidationSpec(private val spec: String) {
+    private val listeners = mutableListOf<ValidationListener>()
+
     fun check(doc: Document): List<SanityCheckResult> {
         val json = JSONParser().parse(spec) as JSONObject
         val results = mutableListOf<SanityCheckResult>()
@@ -47,8 +49,16 @@ class ValidationSpec(private val spec: String) {
             val prop = AbstractProperty.properties.find { it.shortName() == type }!!
             val result = prop.check(nsta, doc, sys, properties)
             results.add(result)
+
+            for (l in listeners) {
+                l.onCheckFinished(result)
+            }
         }
 
         return results
+    }
+
+    fun addValidationListener(listener: ValidationListener) {
+        listeners.add(listener)
     }
 }

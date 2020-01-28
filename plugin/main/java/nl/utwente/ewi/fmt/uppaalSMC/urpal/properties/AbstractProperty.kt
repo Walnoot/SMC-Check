@@ -72,12 +72,13 @@ abstract class AbstractProperty {
         internal var maxMem: Long = 0
 
         @Throws(IOException::class, EngineException::class)
-        internal fun engineQuery(sys: UppaalSystem, init: SymbolicState?, query: String, options: String): Pair<QueryResult, SymbolicTrace> {
-            var trace = SymbolicTrace()
+        internal fun engineQuery(sys: UppaalSystem, init: SymbolicState?, query: String, options: String): Pair<QueryResult, SymbolicTrace?> {
+            var trace: SymbolicTrace? = null
 
             val qf = object : QueryFeedback {
 
                 override fun setTrace(paramChar: Char, paramString: String?, paramConcreteTrace: ConcreteTrace, paramQueryResult: QueryResult) {
+                    println("got concrete trace from symbolic query")
                 }
 
                 override fun setTrace(paramChar: Char, paramString: String?, paramSymbolicTrace: SymbolicTrace, paramQueryResult: QueryResult) {
@@ -153,7 +154,7 @@ abstract class AbstractProperty {
         }
 
         @Throws(IOException::class, EngineException::class)
-        internal fun engineQuery(sys: UppaalSystem, query: String, options: String): Pair<QueryResult, SymbolicTrace> {
+        internal fun engineQuery(sys: UppaalSystem, query: String, options: String): Pair<QueryResult, SymbolicTrace?> {
             return engineQuery(sys, null, query, options)
         }
     }

@@ -47,12 +47,16 @@ abstract class SafetyProperty: AbstractProperty() {
         // translate the NSTA and get a query that specifies the unsafe state
         val cond =  translateNSTA(transNSTA, properties)
 
+        println(AbstractionChecker().checkCondition(cond, transNSTA))
+
         val tDoc = UppaalUtil.toDocument(transNSTA, doc)
 
 //        translateDocument(tDoc, transNSTA, sys)
 
         // add x, y fields to the document where there are none so that it can be shown in the editor
         extendNode(doc, tDoc)
+
+        tDoc.save("/home/michiel/test.xml")
 
         val tSys = UppaalUtil.compile(tDoc)
         UppaalUtil.reconnect()
@@ -62,13 +66,13 @@ abstract class SafetyProperty: AbstractProperty() {
             val query = "A[] not ($cond)"
             println(query)
 
-            val (qr, t) = engineQuery(tSys, query, "trace 1")
+            val (qr, t) = engineQuery(tSys, query, "trace 2")
 
             println(qr)
             println(qr.exception)
             println(qr.message)
 
-            val showTrace: (() -> Unit)? = if (!t.isEmpty) {
+            val showTrace: (() -> Unit)? = if (t != null) {
                 {
                     println("Loading trace")
 
@@ -98,6 +102,10 @@ abstract class SafetyProperty: AbstractProperty() {
             println(query)
 
             val (qr, t) = engineQueryConcrete(tSys, query, "trace 1")
+
+            println(qr)
+            println(qr.exception)
+            println(qr.message)
 
             val showTrace: (() -> Unit)? = if (t != null) {
                 {
@@ -284,98 +292,100 @@ abstract class SafetyProperty: AbstractProperty() {
         }
     }
 
-    /**
-     * Abstracts the NSTA to a NTA so that it can be used for symbolic verification.
-     */
-    private fun abstractNSTA(nsta: NSTA) {
-        // hide all clocks whose clock rate is variable in one or more locations
-        // ignore name space issues for now (variables in templates with the same name as a global variable)
-        val hideVars = mutableSetOf<String>()
-        nsta.eAllContents().forEach {
-            if (it is IdentifierExpression && it.isClockRate) {
-                hideVars.add(it.identifier.name)
+    companion object {
+        /**
+         * Abstracts the NSTA to a NTA so that it can be used for symbolic verification.
+         */
+        fun abstractNSTA(nsta: NSTA) {
+            // hide all clocks whose clock rate is variable in one or more locations
+            // ignore name space issues for now (variables in templates with the same name as a global variable)
+            val hideVars = mutableSetOf<String>()
+            nsta.eAllContents().forEach {
+                if (it is IdentifierExpression && it.isClockRate) {
+                    hideVars.add(it.identifier.name)
+                }
+
+                if (it is VariableDeclaration && it.typeDefinition.baseType == nsta.double.baseType) {
+                    it.variable.forEach { hideVars.add(it.name) }
+                }
             }
 
-            if (it is VariableDeclaration && it.typeDefinition.baseType == nsta.double.baseType) {
-                it.variable.forEach { hideVars.add(it.name) }
-            }
-        }
-
-        // hide vars in invariants
-        nsta.template.flatMap { it.location }.forEach {
-            if (it.invariant != null && removeVarReference(it.invariant, hideVars)) {
+            // hide vars in invariants
+            nsta.template.flatMap { it.location }.forEach {
+                if (it.invariant != null && removeVarReference(it.invariant, hideVars)) {
 //                println("remove invariant in $it")
-                it.invariant = UppaalUtil.createLiteral("true")
+                    it.invariant = UppaalUtil.createLiteral("true")
+                }
             }
-        }
 
-        // hide vars in guards, update
-        nsta.template.flatMap { it.edge }.forEach {
-            if (it.guard != null && removeVarReference(it.guard, hideVars)) {
+            // hide vars in guards, update
+            nsta.template.flatMap { it.edge }.forEach {
+                if (it.guard != null && removeVarReference(it.guard, hideVars)) {
 //                println("remove guard in $it")
-                it.guard = UppaalUtil.createLiteral("true")
-            }
+                    it.guard = UppaalUtil.createLiteral("true")
+                }
 
-            if (it.update != null) {
-                for (update in it.update.toList()) {
-                    if(removeVarReference(update, hideVars)) {
-                        it.update.remove(update)
+                if (it.update != null) {
+                    for (update in it.update.toList()) {
+                        if(removeVarReference(update, hideVars)) {
+                            it.update.remove(update)
+                        }
                     }
                 }
             }
-        }
 
-        // hide vars in global and template declarations
-        hideDeclaration(nsta.globalDeclarations, hideVars)
-        nsta.template.forEach {
-            if (it.declarations != null) {
-                hideDeclaration(it.declarations, hideVars)
+            // hide vars in global and template declarations
+            hideDeclaration(nsta.globalDeclarations, hideVars)
+            nsta.template.forEach {
+                if (it.declarations != null) {
+                    hideDeclaration(it.declarations, hideVars)
+                }
             }
         }
-    }
 
-    private fun removeVarReference (e: EObject, hideVars: Collection<String>): Boolean {
-        if (e is IdentifierExpression && e.identifier.name in hideVars) {
+        private fun removeVarReference (e: EObject, hideVars: Collection<String>): Boolean {
+            if (e is IdentifierExpression && e.identifier.name in hideVars) {
 //            println("found hidden var")
-            return true
-        }
-
-        if (e is LogicalExpression) {
-            if (removeVarReference(e.firstExpr, hideVars)) {
-//                println("change logical expr")
-
-                e.operator = LogicalOperator.AND
-                e.firstExpr = UppaalUtil.createLiteral("true")
+                return true
             }
 
-            if (removeVarReference(e.secondExpr, hideVars)) {
+            if (e is LogicalExpression) {
+                if (removeVarReference(e.firstExpr, hideVars)) {
 //                println("change logical expr")
 
-                e.operator = LogicalOperator.AND
-                e.secondExpr = UppaalUtil.createLiteral("true")
-            }
-        } else {
-            e.eAllContents().forEach {
-                if (removeVarReference(it, hideVars)) {
+                    e.operator = LogicalOperator.AND
+                    e.firstExpr = UppaalUtil.createLiteral("true")
+                }
+
+                if (removeVarReference(e.secondExpr, hideVars)) {
+//                println("change logical expr")
+
+                    e.operator = LogicalOperator.AND
+                    e.secondExpr = UppaalUtil.createLiteral("true")
+                }
+            } else {
+                e.eAllContents().forEach {
+                    if (removeVarReference(it, hideVars)) {
 //                    println("hidden var in child")
-                    return true
+                        return true
+                    }
                 }
             }
+
+            return false
         }
 
-        return false
-    }
-
-    private fun hideDeclaration(declarations: Declarations, hideVars: Collection<String>) {
-        declarations.declaration.toList().filterIsInstance<VariableDeclaration>().forEach {
-            for (v in it.variable.toList()) {
-                if (v.name in hideVars) {
-                    it.variable.remove(v)
+        private fun hideDeclaration(declarations: Declarations, hideVars: Collection<String>) {
+            declarations.declaration.toList().filterIsInstance<VariableDeclaration>().forEach {
+                for (v in it.variable.toList()) {
+                    if (v.name in hideVars) {
+                        it.variable.remove(v)
+                    }
                 }
-            }
 
-            if (it.variable.isEmpty()) {
-                declarations.declaration.remove(it)
+                if (it.variable.isEmpty()) {
+                    declarations.declaration.remove(it)
+                }
             }
         }
     }

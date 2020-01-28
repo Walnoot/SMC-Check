@@ -26,11 +26,19 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Element;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
+import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -155,19 +163,24 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             }
         });
 
-        JScrollPane pane = new JScrollPane(specArea);
-        specPanel.add(pane, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(specArea);
+        specPanel.add(scrollPane, BorderLayout.CENTER);
         specPanel.setPreferredSize(new Dimension(400, 200));
-        add(specPanel);
 
         runButton = new JButton("Run selected checks");
         runButton.addActionListener(e -> doCheck(specArea.getText(), true));
-        add(runButton);
+        specPanel.add(runButton, BorderLayout.SOUTH);
 
         resultPane = new JEditorPane();
         resultPane.setEditable(false);
         resultPane.setContentType("text/html");
-        add(new JScrollPane(resultPane));
+
+        specPanel.setPreferredSize(new Dimension(100, 400));
+        resultPane.setPreferredSize(new Dimension(100, 50));
+
+        JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, specPanel, resultPane);
+        pane.setResizeWeight(1.0);
+        add(pane);
 
         docr.addListener(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
@@ -208,14 +221,49 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
             problems.removeIf((it) -> it instanceof ProblemWrapper);
         runButton.setText("Cancel current check");
         checkThread = new Thread(() -> {
+//            HTMLDocument doc = (HTMLDocument) resultPane.getDocument();
+//
+//            Element body = doc.getElement(doc.getDefaultRootElement(), StyleConstants.NameAttribute, HTML.Tag.BODY);
+//
+//            resultPane.setText("Checking...");
+//            for (HyperlinkListener hl : resultPane.getHyperlinkListeners()) {
+//                resultPane.removeHyperlinkListener(hl);
+//            }
+//
+//            ValidationSpec s = new ValidationSpec(spec);
+//            s.addValidationListener(result -> {
+//                System.out.println("got result");
+//
+//                StringBuilder sb = new StringBuilder();
+////                sb.append(resultPane.getText());
+//                sb.append(result.getMessage().replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
+//                if (result.getShowTrace() != null) {
+//                    String url = "file://" + result.hashCode();
+//                    sb.append("<a href=\"").append(url).append("\">Load Trace.</a>");
+//                    resultPane.addHyperlinkListener((e) -> {
+//                        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+//                            if (e.getURL().toString().equals(url)) {
+//                                result.getShowTrace().invoke();
+//                            }
+//                        }
+//                    });
+//                }
+//                sb.append("<br/>");
+//
+//                try {
+//                    doc.insertAfterEnd(body, "some text");
+//                } catch (BadLocationException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//            List<SanityCheckResult> results = s.check(d);
+
             List<SanityCheckResult> results = new ValidationSpec(spec).check(d);
 
-            for (HyperlinkListener hl : resultPane.getHyperlinkListeners()) {
-                resultPane.removeHyperlinkListener(hl);
-            }
-
             StringBuilder sb = new StringBuilder();
-            sb.append("<html><body>");
+//            sb.append("<html><body>");
             for (SanityCheckResult r: results) {
                 sb.append(r.getMessage().replaceAll("<", "&lt;").replaceAll(">", "&gt;"));
                 if (r.getShowTrace() != null) {
@@ -231,7 +279,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
                 }
                 sb.append("<br/>");
             }
-            sb.append("</body></html>");
+//            sb.append("</body></html>");
             resultPane.setText(sb.toString());
 
             if (!doNotShow && !fromButton) {
