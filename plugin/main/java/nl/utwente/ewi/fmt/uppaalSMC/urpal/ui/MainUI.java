@@ -25,20 +25,11 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Element;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -139,13 +130,11 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        String spec = "{}";
-
         JPanel specPanel = new JPanel();
         specPanel.setLayout(new BorderLayout());
         specPanel.setBorder(BorderFactory.createTitledBorder("Spec"));
 
-        specArea = new JTextArea(spec);
+        specArea = new JTextArea();
 
         specArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override

@@ -17,29 +17,124 @@ import org.muml.uppaal.types.TypesFactory
 
 @SanityCheck(name = "Receive Syncs", shortName = "receivesyncs")
 class ReceiveSyncProperty : SafetyProperty() {
-    override fun translateNSTA(nsta: NSTA, properties: Map<String, Any>): String {
+	override fun translateNSTA(nsta: NSTA, properties: Map<String, Any>): String {
 		// we need to compile the Document so that we know the amount of instances for each Template.
 		val sys = UppaalUtil.compile(UppaalUtil.toDocument(nsta, Document(PrototypeDocument())))
 
-        val checkedChannel = properties["channel"] as String
+		val checkedChannel = properties["channel"] as String
+		val checkedTemplate = properties["template"] as String
+
+		// declare counter variable
+		val dvd = DeclarationsFactory.eINSTANCE.createDataVariableDeclaration()
+		dvd.typeDefinition = UppaalUtil.createTypeReference(nsta.int)
+
+		// amount of missed syncs
+		val missedVarName = "__missed_${checkedChannel}"
+		val missedVar = UppaalUtil.createVariable(missedVarName)
+		dvd.variable.add(missedVar)
+
+		nsta.globalDeclarations.declaration.add(dvd)
+
+		// declare global timer variable
+		val timerDeclaration = DeclarationsFactory.eINSTANCE.createClockVariableDeclaration()
+		timerDeclaration.typeDefinition = UppaalUtil.createTypeReference(nsta.clock)
+
+		val timerName = "__t"
+		val timer = UppaalUtil.createVariable(timerName)
+		timerDeclaration.variable.add(timer)
+
+		// Map from template name to number of instances
+		val processCount = mutableMapOf<String, Int>()
+
+		// collect all processes, count number of instances
+		var prevTemplate: AbstractTemplate? = null
+		for (p in sys.processes) {
+			val name = p.template.getPropertyValue("name") as String
+			if (p.template != prevTemplate) {
+				prevTemplate = p.template
+				processCount[name] = 1
+			} else {
+				processCount[name] = processCount[name]!! + 1
+			}
+		}
+
+		for (template in nsta.template) {
+			for (edge in template.edge) {
+				val sync = edge.synchronization
+
+				// check if the edge synchronises on the channel were interested in
+				if (sync != null && sync.channelExpression.identifier.name == checkedChannel) {
+					if (sync.kind == SynchronizationKind.SEND) {
+						// set value to number of template instances
+						val assignment = ExpressionsFactory.eINSTANCE.createAssignmentExpression()
+						assignment.operator = AssignmentOperator.EQUAL
+						assignment.firstExpr = UppaalUtil.createIdentifier(missedVar)
+						assignment.secondExpr = UppaalUtil.createLiteral(processCount[checkedTemplate].toString())
+
+						edge.update.add(assignment)
+
+						// set timer to 0
+						val timerReset = ExpressionsFactory.eINSTANCE.createAssignmentExpression()
+						timerReset.operator = AssignmentOperator.EQUAL
+						timerReset.firstExpr = UppaalUtil.createIdentifier(timer)
+						timerReset.secondExpr = UppaalUtil.createLiteral("0")
+					}
+
+					// also add decrement to a sending-edge in case the sender is a process instantiated from the
+					// specified template. This decrement update must come after the initial assignment update.
+					if (edge.parentTemplate.name == checkedTemplate) {
+						// decrement missed var by one
+						val increment = ExpressionsFactory.eINSTANCE.createPostIncrementDecrementExpression()
+						increment.operator = IncrementDecrementOperator.DECREMENT
+						increment.expression = UppaalUtil.createIdentifier(missedVar)
+
+						edge.update.add(increment)
+					}
+				} else {
+					// add update m=0 to every edge that does not synchronise on the specified channel
+
+					val assignment = ExpressionsFactory.eINSTANCE.createAssignmentExpression()
+					assignment.operator = AssignmentOperator.EQUAL
+					assignment.firstExpr = UppaalUtil.createIdentifier(missedVar)
+					assignment.secondExpr = UppaalUtil.createLiteral("0")
+
+					edge.update.add(assignment)
+				}
+			}
+		}
+
+		// get ignore condition
+		val cond = properties.getOrDefault("condition", "false") as String
+
+		return  "$missedVarName != 0 and !($cond)"
+	}
+
+	/**
+	 * Old, somewhat incorrect of checking using a check automaton
+	 */
+	fun translateNSTAOld(nsta: NSTA, properties: Map<String, Any>): String {
+		// we need to compile the Document so that we know the amount of instances for each Template.
+		val sys = UppaalUtil.compile(UppaalUtil.toDocument(nsta, Document(PrototypeDocument())))
+
+		val checkedChannel = properties["channel"] as String
 		val checkedTemplate = properties["template"] as String
 
 		// declare counter variables
-        val dvd = DeclarationsFactory.eINSTANCE.createDataVariableDeclaration()
+		val dvd = DeclarationsFactory.eINSTANCE.createDataVariableDeclaration()
 //        dvd.prefix = DataVariablePrefix.META
-        val ref = TypesFactory.eINSTANCE.createTypeReference()
-        ref.referredType = nsta.int
-        dvd.typeDefinition = ref
+		val ref = TypesFactory.eINSTANCE.createTypeReference()
+		ref.referredType = nsta.int
+		dvd.typeDefinition = ref
 
 		// amount of received syncs
-        val receivedVar = UppaalUtil.createVariable("__received_${checkedChannel}")
-        dvd.variable.add(receivedVar)
+		val receivedVar = UppaalUtil.createVariable("__received_${checkedChannel}")
+		dvd.variable.add(receivedVar)
 
 		// amount of sent syncs
-        val sentVar = UppaalUtil.createVariable("__sent_${checkedChannel}")
-        dvd.variable.add(sentVar)
+		val sentVar = UppaalUtil.createVariable("__sent_${checkedChannel}")
+		dvd.variable.add(sentVar)
 
-        nsta.globalDeclarations.declaration.add(dvd)
+		nsta.globalDeclarations.declaration.add(dvd)
 
 		// Map from template name to number of instances
 		val processCount = mutableMapOf<String, Int>()
@@ -146,7 +241,7 @@ class ReceiveSyncProperty : SafetyProperty() {
 		val cond = properties.getOrDefault("condition", "false") as String
 
 		return  "$templateName.$errorLocName and !($cond)"
-    }
+	}
 }
 
 

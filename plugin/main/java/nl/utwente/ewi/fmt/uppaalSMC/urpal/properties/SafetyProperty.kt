@@ -1,15 +1,13 @@
 package nl.utwente.ewi.fmt.uppaalSMC.urpal.properties
 
-import com.uppaal.engine.QueryResult
-import com.uppaal.model.core2.AbstractTemplate
 import com.uppaal.model.core2.Document
-import com.uppaal.model.core2.Element
-import com.uppaal.model.core2.Nail
 import com.uppaal.model.system.UppaalSystem
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
-import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.EditorUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ConcolicChecker
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ConcreteChecker
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ReachabilityChecker
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.SymbolicChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.muml.uppaal.declarations.*
 import org.muml.uppaal.expressions.*
@@ -29,17 +27,22 @@ abstract class SafetyProperty: AbstractProperty() {
         }
 
         val checkType = properties.getOrDefault("check_type", "symbolic") as String
-        val symbolic = checkType == "symbolic"
+        val checker = when(checkType) {
+            "symbolic" -> SymbolicChecker(doc)
+            "concrete" -> ConcreteChecker(doc)
+            "concolic" -> ConcolicChecker(doc)
+            else -> throw IllegalArgumentException("Unknown checker type $checkType")
+        }
 
-        if (symbolic) {
-            abstractNSTA(transNSTA)
+//        if (symbolic) {
+//            abstractNSTA(transNSTA)
 
             if (properties.containsKey("time")) {
                 val time = properties["time"].toString()
 
                 addTimeLimitTemplate(transNSTA, time)
             }
-        }
+//        }
 
         // override any constants in the global declarations if applicable
         setConstants(transNSTA, properties)
@@ -47,87 +50,95 @@ abstract class SafetyProperty: AbstractProperty() {
         // translate the NSTA and get a query that specifies the unsafe state
         val cond =  translateNSTA(transNSTA, properties)
 
-        println(AbstractionChecker().checkCondition(cond, transNSTA))
+        val (reachable, showTrace) = checker.isReachable(cond, transNSTA)
 
-        val tDoc = UppaalUtil.toDocument(transNSTA, doc)
-
-//        translateDocument(tDoc, transNSTA, sys)
-
-        // add x, y fields to the document where there are none so that it can be shown in the editor
-        extendNode(doc, tDoc)
-
-        tDoc.save("/home/michiel/test.xml")
-
-        val tSys = UppaalUtil.compile(tDoc)
-        UppaalUtil.reconnect()
-
-        if (symbolic) {
-            // symbolic query, in all states the safety condition is false
-            val query = "A[] not ($cond)"
-            println(query)
-
-            val (qr, t) = engineQuery(tSys, query, "trace 2")
-
-            println(qr)
-            println(qr.exception)
-            println(qr.message)
-
-            val showTrace: (() -> Unit)? = if (t != null) {
-                {
-                    println("Loading trace")
-
-                    EditorUtil.runQueryGUI(query, tDoc, tSys)
-                    EditorUtil.showPane("Simulator")
-
-//                    MainUI.getDocument().set(tDoc)
-//                    MainUI.getSystemr().set(tSys)
-//                    MainUI.getTracer().set(t)
-                }
-            } else {
-                null
-            }
-
-            if (qr.status == QueryResult.OK) {
-                return SanityCheckResult("Query '$query' satisfied", true, showTrace)
-            } else {
-                return SanityCheckResult("Query '$query' not satisfied", false, showTrace)
-            }
-        } else {
-            // TODO: get from specification
-            val simTime = 66
-            val numSims = 1000
-
-            // simulate N times, filter on the unsafe condition, and stop after one trace is found
-            val query = "simulate [<=$simTime;$numSims] {1} :1: ($cond)"
-            println(query)
-
-            val (qr, t) = engineQueryConcrete(tSys, query, "trace 1")
-
-            println(qr)
-            println(qr.exception)
-            println(qr.message)
-
-            val showTrace: (() -> Unit)? = if (t != null) {
-                {
-                    println("Loading concrete trace")
-
-                    EditorUtil.runQueryGUI(query, tDoc, tSys)
-                    EditorUtil.showPane("ConcreteSimulator")
-
-                    // Loading concrete traces using the same method as symbolic traces seems to be unsupported at the moment
-//                    MainUI.getSystemr().set(tSys)
-//                    MainUI.getConcreteTracer().set(t)
-                }
-            } else {
-                null
-            }
-
-            if (qr.status == QueryResult.OK) {
-                return SanityCheckResult("Query '$query' satisfied", true, showTrace)
-            } else {
-                return SanityCheckResult("Query '$query' not satisfied", false, showTrace)
-            }
+        val message = when(reachable) {
+            ReachabilityChecker.CheckResult.UNREACHABLE -> "Condition $cond unreachable"
+            ReachabilityChecker.CheckResult.REACHABLE -> "Condition $cond reachable"
+            ReachabilityChecker.CheckResult.MAYBE_REACHABLE -> "Condition $cond may be reachable"
         }
+
+        return SanityCheckResult(message, reachable == ReachabilityChecker.CheckResult.UNREACHABLE, showTrace)
+
+//        val tDoc = UppaalUtil.toDocument(transNSTA, doc)
+//
+////        translateDocument(tDoc, transNSTA, sys)
+//
+//        // add x, y fields to the document where there are none so that it can be shown in the editor
+//        extendNode(doc, tDoc)
+//
+//        tDoc.save("/home/michiel/test.xml")
+//
+//        val tSys = UppaalUtil.compile(tDoc)
+//        UppaalUtil.reconnect()
+//
+//        if (symbolic) {
+//            // symbolic query, in all states the safety condition is false
+//            val query = "A[] not ($cond)"
+//            println(query)
+//
+//            val (qr, t) = engineQuery(tSys, query, "trace 2")
+//
+//            println(qr)
+//            println(qr.exception)
+//            println(qr.message)
+//
+//            val showTrace: (() -> Unit)? = if (t != null) {
+//                {
+//                    println("Loading trace")
+//
+//                    EditorUtil.runQueryGUI(query, tDoc, tSys)
+//                    EditorUtil.showPane("Simulator")
+//
+////                    MainUI.getDocument().set(tDoc)
+////                    MainUI.getSystemr().set(tSys)
+////                    MainUI.getTracer().set(t)
+//                }
+//            } else {
+//                null
+//            }
+//
+//            if (qr.status == QueryResult.OK) {
+//                return SanityCheckResult("Query '$query' satisfied", true, showTrace)
+//            } else {
+//                return SanityCheckResult("Query '$query' not satisfied", false, showTrace)
+//            }
+//        } else {
+//            // TODO: get from specification
+//            val simTime = 66
+//            val numSims = 1000
+//
+//            // simulate N times, filter on the unsafe condition, and stop after one trace is found
+//            val query = "simulate [<=$simTime;$numSims] {1} :1: ($cond)"
+//            println(query)
+//
+//            val (qr, t) = engineQueryConcrete(tSys, query, "trace 1")
+//
+//            println(qr)
+//            println(qr.exception)
+//            println(qr.message)
+//
+//            val showTrace: (() -> Unit)? = if (t != null) {
+//                {
+//                    println("Loading concrete trace")
+//
+//                    EditorUtil.runQueryGUI(query, tDoc, tSys)
+//                    EditorUtil.showPane("ConcreteSimulator")
+//
+//                    // Loading concrete traces using the same method as symbolic traces is unsupported at the moment
+////                    MainUI.getSystemr().set(tSys)
+////                    MainUI.getConcreteTracer().set(t)
+//                }
+//            } else {
+//                null
+//            }
+//
+//            if (qr.status == QueryResult.OK) {
+//                return SanityCheckResult("Query '$query' satisfied", true, showTrace)
+//            } else {
+//                return SanityCheckResult("Query '$query' not satisfied", false, showTrace)
+//            }
+//        }
     }
 
     /**
@@ -218,173 +229,6 @@ abstract class SafetyProperty: AbstractProperty() {
                     }
 
                     break
-                }
-            }
-        }
-    }
-
-    /**
-     * Sets the positions of elements in the translated documents to the corresponding positions in the original
-     * Document. Allows the translated Document to be shown in the editor without errors.
-     */
-    private fun extendNode(doc: Document, tDoc: Document) {
-        val locationLabels = listOf("name", "init", "urgent", "committed", "invariant", "exponentialrate", "comments")
-        val edgeLabels = listOf("select", "guard", "synchronisation", "assignment", "comments", "probability")
-
-        var template = doc.templates
-        while (template != null) {
-            val locs = UppaalUtil.getLocations(doc, template.getPropertyValue("name") as String)
-            val tLocs = UppaalUtil.getLocations(tDoc, template.getPropertyValue("name") as String)
-            for (i in locs.indices) {
-                val origLoc = locs[i]
-                val transLoc = tLocs[i]
-
-                setCoords(origLoc, transLoc)
-
-                for (label in locationLabels) {
-                    setCoords(origLoc.getProperty(label), transLoc.getProperty(label))
-                }
-            }
-
-            val edges = UppaalUtil.getEdges(doc, template.getPropertyValue("name") as String)
-            val tEdges = UppaalUtil.getEdges(tDoc, template.getPropertyValue("name") as String)
-            for (i in edges.indices) {
-                val origEdge = edges[i]
-                val transEdge = tEdges[i]
-
-                setCoords(origEdge, transEdge)
-
-                for (label in edgeLabels) {
-                    setCoords(origEdge.getProperty(label), transEdge.getProperty(label))
-                }
-
-                // clear previous nails
-                transEdge.first = null
-
-                var curNail = origEdge.nails
-                var prevNail : Nail? = null
-                while (curNail != null) {
-                    val newNail = transEdge.createNail()
-                    newNail.setProperty("x", curNail.x)
-                    newNail.setProperty("y", curNail.y)
-                    transEdge.insert(newNail, prevNail)
-                    prevNail = newNail
-//                    transEdge.insert(newNail, null)
-
-                    curNail = curNail.next as Nail?
-                }
-            }
-
-            val branches = UppaalUtil.getBranches(doc, template.getPropertyValue("name") as String)
-            val tBranches = UppaalUtil.getBranches(tDoc, template.getPropertyValue("name") as String)
-            for (i in branches.indices) {
-                setCoords(branches[i], tBranches[i])
-            }
-
-            template = template.next as AbstractTemplate?
-        }
-    }
-
-    private fun setCoords(el1: Element, el2: Element) {
-        if (el1.getProperty("x") != null) {
-            el2.setProperty("x", el1.x)
-            el2.setProperty("y", el1.y)
-        }
-    }
-
-    companion object {
-        /**
-         * Abstracts the NSTA to a NTA so that it can be used for symbolic verification.
-         */
-        fun abstractNSTA(nsta: NSTA) {
-            // hide all clocks whose clock rate is variable in one or more locations
-            // ignore name space issues for now (variables in templates with the same name as a global variable)
-            val hideVars = mutableSetOf<String>()
-            nsta.eAllContents().forEach {
-                if (it is IdentifierExpression && it.isClockRate) {
-                    hideVars.add(it.identifier.name)
-                }
-
-                if (it is VariableDeclaration && it.typeDefinition.baseType == nsta.double.baseType) {
-                    it.variable.forEach { hideVars.add(it.name) }
-                }
-            }
-
-            // hide vars in invariants
-            nsta.template.flatMap { it.location }.forEach {
-                if (it.invariant != null && removeVarReference(it.invariant, hideVars)) {
-//                println("remove invariant in $it")
-                    it.invariant = UppaalUtil.createLiteral("true")
-                }
-            }
-
-            // hide vars in guards, update
-            nsta.template.flatMap { it.edge }.forEach {
-                if (it.guard != null && removeVarReference(it.guard, hideVars)) {
-//                println("remove guard in $it")
-                    it.guard = UppaalUtil.createLiteral("true")
-                }
-
-                if (it.update != null) {
-                    for (update in it.update.toList()) {
-                        if(removeVarReference(update, hideVars)) {
-                            it.update.remove(update)
-                        }
-                    }
-                }
-            }
-
-            // hide vars in global and template declarations
-            hideDeclaration(nsta.globalDeclarations, hideVars)
-            nsta.template.forEach {
-                if (it.declarations != null) {
-                    hideDeclaration(it.declarations, hideVars)
-                }
-            }
-        }
-
-        private fun removeVarReference (e: EObject, hideVars: Collection<String>): Boolean {
-            if (e is IdentifierExpression && e.identifier.name in hideVars) {
-//            println("found hidden var")
-                return true
-            }
-
-            if (e is LogicalExpression) {
-                if (removeVarReference(e.firstExpr, hideVars)) {
-//                println("change logical expr")
-
-                    e.operator = LogicalOperator.AND
-                    e.firstExpr = UppaalUtil.createLiteral("true")
-                }
-
-                if (removeVarReference(e.secondExpr, hideVars)) {
-//                println("change logical expr")
-
-                    e.operator = LogicalOperator.AND
-                    e.secondExpr = UppaalUtil.createLiteral("true")
-                }
-            } else {
-                e.eAllContents().forEach {
-                    if (removeVarReference(it, hideVars)) {
-//                    println("hidden var in child")
-                        return true
-                    }
-                }
-            }
-
-            return false
-        }
-
-        private fun hideDeclaration(declarations: Declarations, hideVars: Collection<String>) {
-            declarations.declaration.toList().filterIsInstance<VariableDeclaration>().forEach {
-                for (v in it.variable.toList()) {
-                    if (v.name in hideVars) {
-                        it.variable.remove(v)
-                    }
-                }
-
-                if (it.variable.isEmpty()) {
-                    declarations.declaration.remove(it)
                 }
             }
         }

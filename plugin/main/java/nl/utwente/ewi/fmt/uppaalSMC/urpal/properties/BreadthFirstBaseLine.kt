@@ -1,3 +1,4 @@
+
 package nl.utwente.ewi.fmt.uppaalSMC.urpal.properties
 
 import com.uppaal.model.core2.Document

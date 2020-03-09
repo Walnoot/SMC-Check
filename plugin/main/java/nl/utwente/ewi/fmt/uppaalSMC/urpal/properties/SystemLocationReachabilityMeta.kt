@@ -44,7 +44,6 @@ package nl.utwente.ewi.fmt.uppaalSMC.urpal.properties
 //    override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, cb: (SanityCheckResult) -> Unit) {
 //        val nstaTrans = EcoreUtil.copy(nsta)
 //
-//
 //        val cvd = UppaalUtil.createChannelDeclaration(nstaTrans, "__copy__")
 //        cvd.isBroadcast = true
 //        cvd.isUrgent = true
@@ -125,7 +124,7 @@ package nl.utwente.ewi.fmt.uppaalSMC.urpal.properties
 //                    .parse(proto)
 //            val tSys = UppaalUtil.compile(tDoc)
 //
-//            engineQuery(tSys, "E<> (_Controller.done)", OPTIONS) { _, _ -> }
+//            engineQuery(tSys, "E<> (_Controller.done)", OPTIONS)
 //
 //            engineQuery(tSys, q, OPTIONS) { qr, _ ->
 //                if (qr.status == QueryResult.OK || qr.status == QueryResult.MAYBE_OK) {

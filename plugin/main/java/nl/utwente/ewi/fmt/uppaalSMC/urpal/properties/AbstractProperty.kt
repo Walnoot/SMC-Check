@@ -53,11 +53,11 @@ abstract class AbstractProperty {
 
     companion object {
         val properties = arrayOf(
-            SymbolicProperty(),
+            ConditionProperty(),
             ReceiveSyncProperty(),
-			DeadlockProperty()
+			DeadlockProperty(),
+            TemplateLocationReachabilityMeta()
 //			SystemLocationReachabilityMeta(),
-//			TemplateLocationReachabilityMeta(),
 //          SystemEdgeReachabilityMeta(),
 //          TemplateEdgeReachabilityMeta(),
 //          InvariantViolationProperty()
@@ -78,7 +78,6 @@ abstract class AbstractProperty {
             val qf = object : QueryFeedback {
 
                 override fun setTrace(paramChar: Char, paramString: String?, paramConcreteTrace: ConcreteTrace, paramQueryResult: QueryResult) {
-                    println("got concrete trace from symbolic query")
                 }
 
                 override fun setTrace(paramChar: Char, paramString: String?, paramSymbolicTrace: SymbolicTrace, paramQueryResult: QueryResult) {

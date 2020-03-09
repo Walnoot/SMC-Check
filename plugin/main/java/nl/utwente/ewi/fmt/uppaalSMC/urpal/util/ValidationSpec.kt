@@ -9,7 +9,11 @@ import nl.utwente.ewi.fmt.uppaalSMC.urpal.ui.MainUI
 import org.json.simple.JSONArray
 import org.json.simple.JSONObject
 import org.json.simple.parser.JSONParser
+import java.awt.BorderLayout
 import java.io.IOException
+import javax.swing.BorderFactory
+import javax.swing.JPanel
+import javax.swing.JTextArea
 
 class ValidationSpec(private val spec: String) {
     private val listeners = mutableListOf<ValidationListener>()
@@ -56,6 +60,26 @@ class ValidationSpec(private val spec: String) {
         }
 
         return results
+    }
+
+    fun toPanel () : JPanel {
+        val rootPanel = JPanel()
+
+        val constantsPanel = JPanel()
+        constantsPanel.layout = BorderLayout()
+        constantsPanel.border = BorderFactory.createTitledBorder("Overwrite Constants")
+
+        constantsPanel.add(JTextArea())
+
+        val timePanel = JPanel()
+        timePanel.layout = BorderLayout()
+        timePanel.border = BorderFactory.createTitledBorder("Add time constraint")
+
+        val checksPanel = JPanel()
+        checksPanel.layout = BorderLayout()
+        checksPanel.border = BorderFactory.createTitledBorder("Checks")
+
+        return rootPanel
     }
 
     fun addValidationListener(listener: ValidationListener) {
