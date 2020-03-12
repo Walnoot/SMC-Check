@@ -109,6 +109,15 @@ class ReceiveSyncProperty : SafetyProperty() {
 		return  "$missedVarName != 0 and !($cond)"
 	}
 
+	override fun getArguments(): List<PropertyArgument> {
+//		return listOf(Pair("channel", ArgumentType.STRING), Pair("template", ArgumentType.STRING), Pair("ignore", ArgumentType.STRING))
+		return listOf(
+				PropertyArgument("channel", "Channel", ArgumentType.STRING),
+				PropertyArgument("template", "Template", ArgumentType.STRING),
+				PropertyArgument("ignore", "Ignore Condition", ArgumentType.STRING)
+		)
+	}
+
 	/**
 	 * Old, somewhat incorrect of checking using a check automaton
 	 */

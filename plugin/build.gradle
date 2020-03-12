@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+	compile group: 'com.miglayout', name: 'miglayout-swing', version: '5.2'
 	compile 'com.googlecode.json-simple:json-simple:1.1'
 
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'

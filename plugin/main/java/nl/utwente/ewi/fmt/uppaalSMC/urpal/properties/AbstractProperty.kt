@@ -49,7 +49,9 @@ abstract class AbstractProperty {
 
     fun shortName() = javaClass.getAnnotation(SanityCheck::class.java).shortName
 
-//    open fun addToPanel(panel: JPanel) {}
+    fun name() = javaClass.getAnnotation(SanityCheck::class.java).name
+
+    open fun getArguments(): List<PropertyArgument> = emptyList()
 
     companion object {
         val properties = arrayOf(

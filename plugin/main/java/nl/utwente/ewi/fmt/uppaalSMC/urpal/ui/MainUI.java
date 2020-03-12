@@ -128,48 +128,51 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         guir = new GenericRepository<>("GUI");
         guir.set(this);
 
-        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setLayout(new BorderLayout());
+//        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-        JPanel specPanel = new JPanel();
-        specPanel.setLayout(new BorderLayout());
-        specPanel.setBorder(BorderFactory.createTitledBorder("Spec"));
+//        JPanel specPanel = new JPanel();
+//        specPanel.setLayout(new BorderLayout());
+//        specPanel.setBorder(BorderFactory.createTitledBorder("Spec"));
+//
+//        specArea = new JTextArea();
+//
+//        specArea.getDocument().addDocumentListener(new DocumentListener() {
+//            @Override
+//            public void insertUpdate(DocumentEvent documentEvent) {
+//                EditorUtil.INSTANCE.saveSpecification(specArea.getText(), docr.get());
+//            }
+//
+//            @Override
+//            public void removeUpdate(DocumentEvent documentEvent) {
+//                EditorUtil.INSTANCE.saveSpecification(specArea.getText(), docr.get());
+//            }
+//
+//            @Override
+//            public void changedUpdate(DocumentEvent documentEvent) {
+//            }
+//        });
+//
+//        JScrollPane scrollPane = new JScrollPane(specArea);
+//        specPanel.add(scrollPane, BorderLayout.CENTER);
+//        specPanel.setPreferredSize(new Dimension(400, 200));
+//
+//        runButton = new JButton("Run selected checks");
+//        runButton.addActionListener(e -> doCheck(specArea.getText(), true));
+//        specPanel.add(runButton, BorderLayout.SOUTH);
+//
+//        resultPane = new JEditorPane();
+//        resultPane.setEditable(false);
+//        resultPane.setContentType("text/html");
+//
+//        specPanel.setPreferredSize(new Dimension(100, 400));
+//        resultPane.setPreferredSize(new Dimension(100, 50));
+//
+//        JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, specPanel, resultPane);
+//        pane.setResizeWeight(1.0);
+//        add(pane);
 
-        specArea = new JTextArea();
 
-        specArea.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent documentEvent) {
-                EditorUtil.INSTANCE.saveSpecification(specArea.getText(), docr.get());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent documentEvent) {
-                EditorUtil.INSTANCE.saveSpecification(specArea.getText(), docr.get());
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent documentEvent) {
-            }
-        });
-
-        JScrollPane scrollPane = new JScrollPane(specArea);
-        specPanel.add(scrollPane, BorderLayout.CENTER);
-        specPanel.setPreferredSize(new Dimension(400, 200));
-
-        runButton = new JButton("Run selected checks");
-        runButton.addActionListener(e -> doCheck(specArea.getText(), true));
-        specPanel.add(runButton, BorderLayout.SOUTH);
-
-        resultPane = new JEditorPane();
-        resultPane.setEditable(false);
-        resultPane.setContentType("text/html");
-
-        specPanel.setPreferredSize(new Dimension(100, 400));
-        resultPane.setPreferredSize(new Dimension(100, 50));
-
-        JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, specPanel, resultPane);
-        pane.setResizeWeight(1.0);
-        add(pane);
 
         docr.addListener(this);
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
@@ -366,6 +369,9 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     public void propertyChange(PropertyChangeEvent evt) {
         setActive(selected);
 
-        specArea.setText(EditorUtil.INSTANCE.getSpecification(docr.get()));
+//        specArea.setText(EditorUtil.INSTANCE.getSpecification(docr.get()));
+
+        String spec = EditorUtil.INSTANCE.getSpecification(docr.get());
+        add(new ValidationSpec(spec).toPanel(), BorderLayout.CENTER);
     }
 }
