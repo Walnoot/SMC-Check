@@ -5,6 +5,7 @@ import com.uppaal.model.core2.Document
 import com.uppaal.model.core2.PrototypeDocument
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.muml.uppaal.declarations.DeclarationsFactory
 import org.muml.uppaal.expressions.AssignmentOperator
 import org.muml.uppaal.expressions.CompareOperator
@@ -17,12 +18,12 @@ import org.muml.uppaal.types.TypesFactory
 
 @SanityCheck(name = "Receive Syncs", shortName = "receivesyncs")
 class ReceiveSyncProperty : SafetyProperty() {
-	override fun translateNSTA(nsta: NSTA, properties: Map<String, Any>): String {
+	override fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String {
 		// we need to compile the Document so that we know the amount of instances for each Template.
 		val sys = UppaalUtil.compile(UppaalUtil.toDocument(nsta, Document(PrototypeDocument())))
 
-		val checkedChannel = properties["channel"] as String
-		val checkedTemplate = properties["template"] as String
+		val checkedChannel = config.parameters["channel"]
+		val checkedTemplate = config.parameters["template"]
 
 		// declare counter variable
 		val dvd = DeclarationsFactory.eINSTANCE.createDataVariableDeclaration()
@@ -104,17 +105,16 @@ class ReceiveSyncProperty : SafetyProperty() {
 		}
 
 		// get ignore condition
-		val cond = properties.getOrDefault("condition", "false") as String
+		val cond = config.parameters.getOrDefault("ignore-condition", "false")
 
 		return  "$missedVarName != 0 and !($cond)"
 	}
 
-	override fun getArguments(): List<PropertyArgument> {
-//		return listOf(Pair("channel", ArgumentType.STRING), Pair("template", ArgumentType.STRING), Pair("ignore", ArgumentType.STRING))
-		return listOf(
-				PropertyArgument("channel", "Channel", ArgumentType.STRING),
-				PropertyArgument("template", "Template", ArgumentType.STRING),
-				PropertyArgument("ignore", "Ignore Condition", ArgumentType.STRING)
+	override fun getParameters(): List<PropertyParameter> {
+		return super.getParameters() + listOf(
+				PropertyParameter("channel", "Channel", ArgumentType.STRING),
+				PropertyParameter("template", "Template", ArgumentType.STRING),
+				PropertyParameter("ignore-condition", "Ignore Condition", ArgumentType.STRING)
 		)
 	}
 

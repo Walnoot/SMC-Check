@@ -8,6 +8,7 @@ import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ConcreteChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ReachabilityChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.SymbolicChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.muml.uppaal.declarations.*
 import org.muml.uppaal.expressions.*
@@ -15,7 +16,7 @@ import org.muml.uppaal.templates.LocationKind
 import org.muml.uppaal.types.TypesFactory
 
 abstract class SafetyProperty: AbstractProperty() {
-    override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, properties: Map<String, Any>): SanityCheckResult {
+    override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, config: ValidationSpec.PropertyConfiguration): SanityCheckResult {
         val transNSTA = EcoreUtil.copy(nsta)
 
         // for inexplicable reasons the name of the location is stored in the comment field
@@ -26,7 +27,7 @@ abstract class SafetyProperty: AbstractProperty() {
             }
         }
 
-        val checkType = properties.getOrDefault("check_type", "symbolic") as String
+        val checkType = config.parameters["check_type"]
         val checker = when(checkType) {
             "symbolic" -> SymbolicChecker(doc)
             "concrete" -> ConcreteChecker(doc)
@@ -37,18 +38,18 @@ abstract class SafetyProperty: AbstractProperty() {
 //        if (symbolic) {
 //            abstractNSTA(transNSTA)
 
-            if (properties.containsKey("time")) {
-                val time = properties["time"].toString()
+            if (config.spec.timeLimitEnabled) {
+                val time = config.spec.timeLimit
 
                 addTimeLimitTemplate(transNSTA, time)
             }
 //        }
 
         // override any constants in the global declarations if applicable
-        setConstants(transNSTA, properties)
+        setConstants(transNSTA, config.spec.overrideConstants)
 
         // translate the NSTA and get a query that specifies the unsafe state
-        val cond =  translateNSTA(transNSTA, properties)
+        val cond =  translateNSTA(transNSTA, config)
 
         val (reachable, showTrace) = checker.isReachable(cond, transNSTA)
 
@@ -141,6 +142,10 @@ abstract class SafetyProperty: AbstractProperty() {
 //        }
     }
 
+    override fun getParameters(): List<PropertyParameter> {
+        return listOf(PropertyParameter("check_type", "Check type", ArgumentType.CHECK_TYPE))
+    }
+
     /**
      * Add a process to the NSTA that blocks after the specified time has passed.
      */
@@ -179,16 +184,13 @@ abstract class SafetyProperty: AbstractProperty() {
         edge.guard = guard
     }
 
-    protected abstract fun translateNSTA(nsta: NSTA, properties: Map<String, Any>): String
+    protected abstract fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String
 
     /**
      * Override constants in the global specification
      */
     private fun setConstants(nsta: NSTA, properties: Map<String, Any>) {
-        nsta.globalDeclarations.declaration
-                .filterIsInstance<DataVariableDeclaration>()
-                .filter { it.prefix == DataVariablePrefix.CONST } // for every constant variable
-                .flatMap { it.variable }
+        UppaalUtil.getConstants(nsta)
                 .filter { properties.containsKey(it.name) } // if it is overwritten in the spec
                 .forEach {
                     // change the initializer to the specified value as a literal

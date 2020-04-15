@@ -2,6 +2,7 @@ package nl.utwente.ewi.fmt.uppaalSMC.urpal.properties
 
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.muml.uppaal.declarations.Variable
 import org.muml.uppaal.declarations.global.ChannelPriority
 import org.muml.uppaal.declarations.global.GlobalFactory
@@ -11,9 +12,9 @@ import org.muml.uppaal.templates.TemplatesFactory
 
 @SanityCheck(name = "Synchronization post-condition", shortName = "sync-post")
 class PostSyncProperty : SafetyProperty() {
-    override fun translateNSTA(nsta: NSTA, properties: Map<String, Any>): String {
-        val channel = properties["channel"] as String
-        val condition = properties["condition"] as String
+    override fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String {
+        val channel = config.parameters["channel"]!!
+        val condition = config.parameters["condition"]!!
 
         addCheckAutomaton(nsta, UppaalUtil.createVariable(channel))
 

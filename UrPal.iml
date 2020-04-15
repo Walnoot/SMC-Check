@@ -26,7 +26,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+  <component name="NewModuleRootManager">
     <output url="file://$MODULE_DIR$/build/classes/java/main" />
     <output-test url="file://$MODULE_DIR$/build/classes/java/test" />
     <exclude-output />
@@ -37,6 +37,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="parser" />
     <orderEntry type="module" module-name="parser" />
     <orderEntry type="library" name="Gradle: com.miglayout:miglayout-swing:5.2" level="project" />
     <orderEntry type="library" name="Gradle: com.googlecode.json-simple:json-simple:1.1" level="project" />
@@ -84,7 +85,6 @@
     <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" name="Gradle: javax.inject:javax.inject:1" level="project" />
     <orderEntry type="library" name="Gradle: aopalliance:aopalliance:1.0" level="project" />
-    <orderEntry type="module" module-name="parser" exported="" />
     <orderEntry type="library" name="Gradle: org.ow2.asm:asm-analysis:7.0" level="project" />
     <orderEntry type="library" name="Gradle: org.ow2.asm:asm-tree:7.0" level="project" />
     <orderEntry type="library" name="Gradle: org.ow2.asm:asm:7.0" level="project" />

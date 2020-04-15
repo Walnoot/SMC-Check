@@ -354,6 +354,19 @@ object UppaalUtil {
         }
     }
 
+    fun getConstants (nsta: NSTA): List<Variable> {
+        return nsta.globalDeclarations.declaration
+                .filterIsInstance<DataVariableDeclaration>()
+                .filter { it.prefix == DataVariablePrefix.CONST }
+                .flatMap { it.variable }
+    }
+
+    fun getClocks (nsta: NSTA): List<Variable> {
+        return nsta.globalDeclarations.declaration
+                .filterIsInstance<ClockVariableDeclaration>()
+                .flatMap { it.variable }
+    }
+
     fun toDocument(nsta: NSTA, doc: Document): Document {
         var xml = Serialization().main(nsta).toString().replace(Regex("<!DOCTYPE.*>"), "")
 

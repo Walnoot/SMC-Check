@@ -129,6 +129,8 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         guir.set(this);
 
         setLayout(new BorderLayout());
+
+
 //        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 //        JPanel specPanel = new JPanel();
@@ -372,6 +374,11 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 //        specArea.setText(EditorUtil.INSTANCE.getSpecification(docr.get()));
 
         String spec = EditorUtil.INSTANCE.getSpecification(docr.get());
-        add(new ValidationSpec(spec).toPanel(), BorderLayout.CENTER);
+
+        removeAll();
+
+        ValidationSpec valSpec = new ValidationSpec(spec);
+        JPanel panel = new ValidationPanel(valSpec);
+        add(panel, BorderLayout.CENTER);
     }
 }

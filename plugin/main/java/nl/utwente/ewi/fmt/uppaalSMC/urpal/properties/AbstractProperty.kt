@@ -14,6 +14,7 @@ import com.uppaal.model.system.symbolic.SymbolicTrace
 
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -21,14 +22,14 @@ import java.util.concurrent.TimeoutException
 
 abstract class AbstractProperty {
 
-    protected abstract fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, properties: Map<String, Any>): SanityCheckResult
+    protected abstract fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, config: ValidationSpec.PropertyConfiguration): SanityCheckResult
 
-    fun check(nsta: NSTA, doc: Document, sys: UppaalSystem, properties: Map<String, Any>): SanityCheckResult {
+    fun check(nsta: NSTA, doc: Document, sys: UppaalSystem, config: ValidationSpec.PropertyConfiguration): SanityCheckResult {
         var result: SanityCheckResult? = null
 
         val executor = Executors.newSingleThreadExecutor()
         val future = executor.submit {
-            result = doCheck(nsta, doc, sys, properties)
+            result = doCheck(nsta, doc, sys, config)
         }
         try {
             future.get(timeout.toLong(), TimeUnit.SECONDS)
@@ -51,7 +52,7 @@ abstract class AbstractProperty {
 
     fun name() = javaClass.getAnnotation(SanityCheck::class.java).name
 
-    open fun getArguments(): List<PropertyArgument> = emptyList()
+    open fun getParameters(): List<PropertyParameter> = emptyList()
 
     companion object {
         val properties = arrayOf(

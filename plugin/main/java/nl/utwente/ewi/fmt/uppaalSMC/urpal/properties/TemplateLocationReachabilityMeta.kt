@@ -8,6 +8,7 @@ import nl.utwente.ewi.fmt.uppaalSMC.ChanceNode
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ReachabilityChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.muml.uppaal.declarations.DataVariablePrefix
 import org.muml.uppaal.declarations.DeclarationsFactory
@@ -28,7 +29,7 @@ import java.util.regex.Pattern
 
 @SanityCheck(name = "Template location Reachability meta", shortName = "template-locations")
 class TemplateLocationReachabilityMeta : AbstractProperty() {
-    override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, properties: Map<String, Any>): SanityCheckResult {
+    override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, config: ValidationSpec.PropertyConfiguration): SanityCheckResult {
         val nstaTrans = EcoreUtil.copy(nsta)
         ReachabilityChecker.abstractNSTA(nstaTrans)
 
