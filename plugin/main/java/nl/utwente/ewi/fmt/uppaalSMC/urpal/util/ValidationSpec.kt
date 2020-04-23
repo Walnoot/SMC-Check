@@ -72,18 +72,22 @@ class ValidationSpec(spec: String) {
         val jsonChecks = json.getOrDefault("checks", JSONArray()) as JSONArray
         for (jsonConfig in jsonChecks.map { it as JSONObject }) {
             val type = jsonConfig["type"] as String
-            val prop = AbstractProperty.properties.find { it.shortName() == type }!!
+            val prop = AbstractProperty.properties.find { it.shortName() == type }
 
-            val params = mutableMapOf<String, String>()
-            if ("params" in jsonConfig) {
-                val jsonParams = jsonConfig["params"] as JSONObject
+            if (prop != null) {
+                val params = mutableMapOf<String, String>()
+                if ("params" in jsonConfig) {
+                    val jsonParams = jsonConfig["params"] as JSONObject
 
-                for (entry in jsonParams) {
-                    params[entry.key as String] = entry.value as String
+                    for (entry in jsonParams) {
+                        params[entry.key as String] = entry.value as String
+                    }
                 }
-            }
 
-            configs.add(PropertyConfiguration(prop, params))
+                configs.add(PropertyConfiguration(prop, params))
+            } else {
+                println("Unknown property type '$type'")
+            }
         }
 
         if ("time" in json) {

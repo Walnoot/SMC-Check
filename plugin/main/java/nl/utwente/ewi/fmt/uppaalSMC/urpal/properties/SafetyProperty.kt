@@ -27,7 +27,7 @@ abstract class SafetyProperty: AbstractProperty() {
             }
         }
 
-        val checkType = config.parameters["check_type"]
+        val checkType = config.parameters.getOrDefault("check_type", "symbolic")
         val checker = when(checkType) {
             "symbolic" -> SymbolicChecker(doc)
             "concrete" -> ConcreteChecker(doc)
@@ -53,11 +53,7 @@ abstract class SafetyProperty: AbstractProperty() {
 
         val (reachable, showTrace) = checker.isReachable(cond, transNSTA)
 
-        val message = when(reachable) {
-            ReachabilityChecker.CheckResult.UNREACHABLE -> "Condition $cond unreachable"
-            ReachabilityChecker.CheckResult.REACHABLE -> "Condition $cond reachable"
-            ReachabilityChecker.CheckResult.MAYBE_REACHABLE -> "Condition $cond may be reachable"
-        }
+        val message = getMessage(config, reachable)
 
         return SanityCheckResult(message, reachable == ReachabilityChecker.CheckResult.UNREACHABLE, showTrace)
 
@@ -185,6 +181,14 @@ abstract class SafetyProperty: AbstractProperty() {
     }
 
     protected abstract fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String
+
+    open fun getMessage (config: ValidationSpec.PropertyConfiguration, result: ReachabilityChecker.CheckResult): String {
+        return when (result) {
+            ReachabilityChecker.CheckResult.REACHABLE -> "Property reachable."
+            ReachabilityChecker.CheckResult.UNREACHABLE -> "Property not reachable."
+            ReachabilityChecker.CheckResult.MAYBE_REACHABLE -> "Property may be reachable."
+        }
+    }
 
     /**
      * Override constants in the global specification

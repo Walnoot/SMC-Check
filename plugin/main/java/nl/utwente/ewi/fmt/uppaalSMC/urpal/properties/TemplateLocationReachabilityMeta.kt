@@ -27,7 +27,7 @@ import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 
-@SanityCheck(name = "Template location Reachability meta", shortName = "template-locations")
+@SanityCheck(name = "Template location Reachability meta (UrPal)", shortName = "template-locations")
 class TemplateLocationReachabilityMeta : AbstractProperty() {
     override fun doCheck(nsta: NSTA, doc: Document, sys: UppaalSystem, config: ValidationSpec.PropertyConfiguration): SanityCheckResult {
         val nstaTrans = EcoreUtil.copy(nsta)

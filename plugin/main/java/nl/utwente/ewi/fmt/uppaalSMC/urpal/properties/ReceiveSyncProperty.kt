@@ -4,6 +4,7 @@ import com.uppaal.model.core2.AbstractTemplate
 import com.uppaal.model.core2.Document
 import com.uppaal.model.core2.PrototypeDocument
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.checkers.ReachabilityChecker
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.muml.uppaal.declarations.DeclarationsFactory
@@ -22,8 +23,8 @@ class ReceiveSyncProperty : SafetyProperty() {
 		// we need to compile the Document so that we know the amount of instances for each Template.
 		val sys = UppaalUtil.compile(UppaalUtil.toDocument(nsta, Document(PrototypeDocument())))
 
-		val checkedChannel = config.parameters["channel"]
-		val checkedTemplate = config.parameters["template"]
+		val checkedChannel = config.parameters[PARAM_CHANNEL]
+		val checkedTemplate = config.parameters[PARAM_TEMPLATE]
 
 		// declare counter variable
 		val dvd = DeclarationsFactory.eINSTANCE.createDataVariableDeclaration()
@@ -105,17 +106,27 @@ class ReceiveSyncProperty : SafetyProperty() {
 		}
 
 		// get ignore condition
-		val cond = config.parameters.getOrDefault("ignore-condition", "false")
+		val cond = config.parameters.getOrDefault(PARAM_IGNORE_CONDITION, "false")
 
 		return  "$missedVarName != 0 and !($cond)"
 	}
 
 	override fun getParameters(): List<PropertyParameter> {
 		return super.getParameters() + listOf(
-				PropertyParameter("channel", "Channel", ArgumentType.STRING),
-				PropertyParameter("template", "Template", ArgumentType.STRING),
-				PropertyParameter("ignore-condition", "Ignore Condition", ArgumentType.STRING)
+				PropertyParameter(PARAM_CHANNEL, "Channel", ArgumentType.STRING),
+				PropertyParameter(PARAM_TEMPLATE, "Template", ArgumentType.STRING),
+				PropertyParameter(PARAM_IGNORE_CONDITION, "Ignore Condition", ArgumentType.STRING)
 		)
+	}
+
+	override fun getMessage(config: ValidationSpec.PropertyConfiguration, result: ReachabilityChecker.CheckResult): String {
+		val channel = config.parameters[PARAM_CHANNEL]
+
+		return when (result) {
+			ReachabilityChecker.CheckResult.REACHABLE -> "Missed synchronization on channel $channel is possible."
+			ReachabilityChecker.CheckResult.MAYBE_REACHABLE -> "Channel $channel may not always synchronize."
+			ReachabilityChecker.CheckResult.UNREACHABLE -> "Channel $channel always synchronized."
+		}
 	}
 
 	/**
@@ -251,7 +262,10 @@ class ReceiveSyncProperty : SafetyProperty() {
 
 		return  "$templateName.$errorLocName and !($cond)"
 	}
+
+	companion object {
+		const val PARAM_CHANNEL = "channel"
+		const val PARAM_TEMPLATE = "template"
+		const val PARAM_IGNORE_CONDITION = "ignore-condition"
+	}
 }
-
-
-

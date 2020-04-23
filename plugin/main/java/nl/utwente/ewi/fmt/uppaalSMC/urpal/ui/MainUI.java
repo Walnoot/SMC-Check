@@ -39,6 +39,8 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     private JTextArea specArea;
     private static XtextResourceSet rs;
 
+    private ValidationPanel validationPanel;
+
     public static Repository<Document> getDocument() {return docr; }
 
     private static Repository<Document> docr;
@@ -115,7 +117,6 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     public MainUI(Registry r) {
         super();
 
-        new JSONParser();
         docr = r.getRepository("EditorDocument");
         tracer = r.getRepository("SymbolicTrace");
         concreteTracer = r.getRepository("ConcreteTrace");
@@ -177,6 +178,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
 
         docr.addListener(this);
+
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
             if (e.getKeyCode() == KeyEvent.VK_F6 && e.getID() == KeyEvent.KEY_PRESSED) {
 
@@ -312,12 +314,14 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
     @Override
     public Component getComponent() {
-        return new JScrollPane(this);
+        JScrollPane pane = new JScrollPane(this);
+        pane.getVerticalScrollBar().setUnitIncrement(16);
+        return pane;
     }
 
     @Override
     public int getDevelopmentIndex() {
-        return 350;
+        return 340;
     }
 
     @Override
@@ -355,6 +359,10 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
     @Override
     public void setActive(boolean selected) {
         this.selected = selected;
+
+        if (selected && validationPanel != null) {
+            validationPanel.update();
+        }
     }
 
     @Override
@@ -364,7 +372,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
     @Override
     public String getTitle() {
-        return "SMC Checker";
+        return "SMC Validation";
     }
 
     @Override
@@ -378,7 +386,7 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         removeAll();
 
         ValidationSpec valSpec = new ValidationSpec(spec);
-        JPanel panel = new ValidationPanel(valSpec);
-        add(panel, BorderLayout.CENTER);
+        validationPanel = new ValidationPanel(valSpec);
+        add(validationPanel, BorderLayout.CENTER);
     }
 }

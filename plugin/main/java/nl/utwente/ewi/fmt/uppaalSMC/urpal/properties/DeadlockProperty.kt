@@ -6,7 +6,7 @@ import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 
-@SanityCheck(name = "Deadlocks", shortName = "deadlock")
+@SanityCheck(name = "Deadlocks (UrPal)", shortName = "deadlock")
 class DeadlockProperty : SafetyProperty() {
     override fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String {
         // compile UppaalSystem so we can iterate over every instantiated process
@@ -33,5 +33,10 @@ class DeadlockProperty : SafetyProperty() {
         }
 
         return query
+    }
+
+    override fun getParameters(): List<PropertyParameter> {
+        // Don't show checker parameter because only symbolic checking is allowed for deadlock predicate
+        return emptyList()
     }
 }

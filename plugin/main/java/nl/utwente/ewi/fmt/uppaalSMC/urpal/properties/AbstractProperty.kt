@@ -56,7 +56,7 @@ abstract class AbstractProperty {
 
     companion object {
         val properties = arrayOf(
-            ConditionProperty(),
+            InvariantProperty(),
             ReceiveSyncProperty(),
 			DeadlockProperty(),
             TemplateLocationReachabilityMeta()

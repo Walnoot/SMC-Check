@@ -1,14 +1,12 @@
 package nl.utwente.ewi.fmt.uppaalSMC.urpal.ui
 
+import com.uppaal.plugin.Repository
 import net.miginfocom.swing.MigLayout
 import nl.utwente.ewi.fmt.uppaalSMC.NSTA
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.properties.AbstractProperty
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.properties.ArgumentType
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.properties.SanityCheckResult
-import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.EditorUtil
-import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.UppaalUtil
-import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationListener
-import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
+import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.*
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Label
@@ -21,6 +19,8 @@ import javax.swing.event.DocumentListener
  * UI panel with elements that show and update the ValidationSpec state.
  */
 class ValidationPanel (private val spec: ValidationSpec): JPanel(), ValidationListener {
+    private var checkThread: Thread? = null
+
     /**
      * Callback per validation config to update UI state during checking.
      */
@@ -39,6 +39,15 @@ class ValidationPanel (private val spec: ValidationSpec): JPanel(), ValidationLi
             val doc = MainUI.getDocument().get()
             EditorUtil.saveSpecification(specString, doc)
         }
+
+        val listener = DocumentChangeListener {
+            println("change!")
+        }
+        MainUI.getDocument().get().addListener(listener)
+    }
+
+    fun update () {
+        addContent()
     }
 
     /**
@@ -48,60 +57,86 @@ class ValidationPanel (private val spec: ValidationSpec): JPanel(), ValidationLi
         removeAll()
 
         val doc = MainUI.getDocument().get()
-        val nsta = MainUI.load(doc)
+        val nsta: NSTA? = MainUI.load(doc)
 
         val runPanel = JPanel()
         runPanel.layout = MigLayout()
-        val runButton = JButton("Run checks")
+        val runButton = JButton(BUTTON_TEXT_RUN)
         val statusLabel = JLabel()
 
         if (nsta == null) {
-            statusLabel.text = "Compile errors in document."
-        }
+            statusLabel.text = "Unable to parse document."
+        } else {
+            runButton.addActionListener {
+                // TODO: add mutex to avoid any race conditions
 
-        runButton.addActionListener {
-            // run checks in new thread to avoid blocking UI
-            Thread {
-                val doc = MainUI.getDocument().get()
-                val results = spec.check(doc)
-                val allSatisfied = results.all { it.satisfied }
+                val thread = checkThread
 
-                if (allSatisfied) {
-                    statusLabel.text = "All checks satisfied."
-                    statusLabel.foreground = Color.BLACK
+                if (thread == null || !thread.isAlive) {
+                    runButton.text = BUTTON_TEXT_CANCEL
+
+                    // run checks in new thread to avoid blocking UI
+                    val newThread = Thread {
+                        try {
+                            val doc = MainUI.getDocument().get()
+                            val results = spec.check(doc)
+                            val allSatisfied = results.all { it.satisfied }
+
+                            if (allSatisfied) {
+                                statusLabel.text = "All checks satisfied."
+                                statusLabel.foreground = Color.BLACK
+                            } else {
+                                statusLabel.text = "Some checks not satisfied."
+                                statusLabel.foreground = Color.RED
+                            }
+                        } finally {
+                            runButton.text = BUTTON_TEXT_RUN
+                        }
+                    }
+
+                    checkThread = newThread
+                    newThread.start()
                 } else {
-                    statusLabel.text = "Some checks not satisfied."
-                    statusLabel.foreground = Color.RED
+                    // cancel check
+                    thread.interrupt()
+                    UppaalUtil.engine.cancel();
                 }
-            }.start()
+            }
+
+            runPanel.add(runButton)
+            runPanel.add(statusLabel)
+            add(runPanel)
+
+            val checksPanel = JPanel()
+            checksPanel.layout = MigLayout("wrap 1")
+            checksPanel.border = BorderFactory.createTitledBorder("Checks")
+
+            for (check in spec.propertyConfigurations) {
+                checksPanel.add(checkToPanel(check))
+            }
+
+            if (spec.propertyConfigurations.isEmpty()) {
+                checksPanel.add(JLabel("Press 'Add Check' to add a validation property."))
+            }
+
+            val addCheckButton = JButton("Add check")
+            addCheckButton.addActionListener { addCheckDialog() }
+
+            checksPanel.add(addCheckButton)
+
+            add(checksPanel)
+
+            val constantsPanel = getConstantsPanel(nsta)
+
+            add(constantsPanel)
+
+            val timePanel = getTimePanel(nsta)
+
+            add(timePanel)
         }
 
-        runPanel.add(runButton)
-        runPanel.add(statusLabel)
-        add(runPanel)
-
-        val checksPanel = JPanel()
-        checksPanel.layout = MigLayout("wrap 1")
-        checksPanel.border = BorderFactory.createTitledBorder("Checks")
-
-        for (check in spec.propertyConfigurations) {
-            checksPanel.add(checkToPanel(check))
-        }
-
-        val addCheckButton = JButton("Add check")
-        addCheckButton.addActionListener { addCheckDialog() }
-
-        checksPanel.add(addCheckButton)
-
-        add(checksPanel)
-
-        val constantsPanel = getConstantsPanel(nsta)
-
-        add(constantsPanel)
-
-        val timePanel = getTimePanel(nsta)
-
-        add(timePanel)
+        invalidate()
+        repaint()
     }
 
     /**
@@ -122,7 +157,10 @@ class ValidationPanel (private val spec: ValidationSpec): JPanel(), ValidationLi
         val updateFuction = {
             spec.clearOverrideConstants()
             for ((key, value) in elements) {
-                spec.setOverrideConstant(key.selectedItem as String, value.text)
+                // selected item can be null if the NSTA has zero constant vars
+                if (key.selectedItem != null) {
+                    spec.setOverrideConstant(key.selectedItem as String, value.text)
+                }
             }
         }
 
@@ -325,5 +363,10 @@ class ValidationPanel (private val spec: ValidationSpec): JPanel(), ValidationLi
 
     override fun onCheckFinished(config: ValidationSpec.PropertyConfiguration, result: SanityCheckResult) {
         updateLabels[config]?.invoke(result)
+    }
+
+    companion object {
+        const val BUTTON_TEXT_RUN = "Run Checks"
+        const val BUTTON_TEXT_CANCEL = "Cancel Checks"
     }
 }

@@ -3,6 +3,7 @@ package nl.utwente.ewi.fmt.uppaalSMC.urpal.util
 import com.uppaal.model.core2.Document
 import com.uppaal.model.core2.Query
 import com.uppaal.model.system.UppaalSystem
+import com.uppaal.model.system.symbolic.SymbolicTrace
 import com.uppaal.plugin.Repository
 import nl.utwente.ewi.fmt.uppaalSMC.urpal.ui.MainUI
 import java.awt.Component
@@ -28,14 +29,20 @@ object EditorUtil {
     }
 
     fun runQueryGUI (query: String, doc: Document, sys: UppaalSystem) {
+        // First set an empty trace to clear old traces
+        MainUI.getTracer().set(SymbolicTrace())
+        MainUI.getTracer().fire(Repository.ChangeType.REPLACED)
+
         val oldDoc = MainUI.getDocument().get()
+
         MainUI.getDocument().set(doc)
-//        MainUI.getSystemr().set(sys)
 
         // add query to the query list so it can be checked in the GUI
 		doc.queryList.addLast(Query(query, "Automatically generated query."))
 
-        MainUI.getDocument().fire(Repository.ChangeType.UPDATED)
+        MainUI.getDocument().fire(Repository.ChangeType.REPLACED)
+
+        MainUI.getSystemr().set(sys)
 
         var tabPane: JTabbedPane = findTabbedPane()
 
