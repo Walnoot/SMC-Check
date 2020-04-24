@@ -112,5 +112,5 @@ githubPublish {
 githubPublish.dependsOn preTagCommit
 github {
     token deployToken
-    repositoryName "utwente-fmt/UrPal"
+    repositoryName "Walnoot/SMC-Check"
 }

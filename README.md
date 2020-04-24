@@ -68,7 +68,7 @@ Any variables marked const in the model can be overwritten before model checking
 
 Limit the model to be unable to take time transitions after a specified amount of time. Useful if the model has no upper limit on time, and symbolic checking is used.
 
-#### Known issues
+### Known issues
 
 When loading a trace in the editor, Uppaal will show a prompt asking to asking to upload the new model. If this happens, press no (otherwise the original, unchanged model is loaded and the trace cannot be shown).
 
