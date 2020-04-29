@@ -1,7 +1,11 @@
 # UrPal -- Uppaal SMC Version
 Applying sanity checks to find commonly made errors in Uppaal SMC models. This repository is a rewrite of the [Urpal](https://github.com/utwente-fmt/UrPal) plugin, and aims to facilitate model validation for Uppaal SMC models (whereas the Urpal plugin only supports 'pure' Uppaal timed automata models). New checks aimed specifically at Uppaal SMC models are added, and a subset of Urpal checks are adapted to work with Uppaal SMC models.
 
-### Setup
+### Installation
+
+Go to your Uppaal installation folder, and create a 'plugings' directory if it does not already exist. Download the latest [release](https://github.com/Walnoot/SMC-Check/releases) and place it in the plugin folder. The next time Uppaal is launched an additional tab should be present in the editor. 
+
+### Building
 ##### Repository initialization
 Clone the repository with the ```--recurse-submodules``` argument in order to automatically initialize and update each submodule in the repository (recommended).
 Or execute ```git submodule update --init --recursive``` in the repository after cloning normally to achieve the same.
