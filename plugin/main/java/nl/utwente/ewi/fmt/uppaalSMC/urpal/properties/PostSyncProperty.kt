@@ -83,6 +83,13 @@ class PostSyncProperty : SafetyProperty() {
         return variable
     }
 
+    override fun getParameters(): List<PropertyParameter> {
+        val params = listOf(PropertyParameter("channel", "Channel", ArgumentType.STRING),
+                PropertyParameter("condition", "Condition", ArgumentType.STRING))
+
+        return super.getParameters() + params
+    }
+
     companion object {
         const val TEMPLATE_NAME = "__check_sync_post_condition"
         const val CHECK_LOCATION_NAME = "Check"

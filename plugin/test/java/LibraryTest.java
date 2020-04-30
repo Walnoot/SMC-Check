@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 
 public class LibraryTest {
     @Test public void testSomeLibraryMethod() {
+        println("test running")
         assertTrue(true);
     }
 }

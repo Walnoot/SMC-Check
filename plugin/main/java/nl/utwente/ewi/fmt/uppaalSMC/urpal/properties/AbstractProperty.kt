@@ -55,11 +55,13 @@ abstract class AbstractProperty {
     open fun getParameters(): List<PropertyParameter> = emptyList()
 
     companion object {
+        // Some Urpal checks until refactored to new property interface
         val properties = arrayOf(
-            InvariantProperty(),
-            ReceiveSyncProperty(),
-			DeadlockProperty(),
-            TemplateLocationReachabilityMeta()
+                InvariantProperty(),
+                ReceiveSyncProperty(),
+                PostSyncProperty(),
+                DeadlockProperty(),
+                TemplateLocationReachabilityMeta()
 //			SystemLocationReachabilityMeta(),
 //          SystemEdgeReachabilityMeta(),
 //          TemplateEdgeReachabilityMeta(),
