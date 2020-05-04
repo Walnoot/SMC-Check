@@ -27,7 +27,7 @@ abstract class SafetyProperty: AbstractProperty() {
             }
         }
 
-        val checkType = config.parameters.getOrDefault("check_type", "symbolic")
+        val checkType = config.parameters.getOrDefault(CHECKER_TYPE, "symbolic")
         val checker = when(checkType) {
             "symbolic" -> SymbolicChecker(doc)
             "concrete" -> ConcreteChecker(doc)
@@ -139,7 +139,7 @@ abstract class SafetyProperty: AbstractProperty() {
     }
 
     override fun getParameters(): List<PropertyParameter> {
-        return listOf(PropertyParameter("check_type", "Check type", ArgumentType.CHECK_TYPE))
+        return listOf(PropertyParameter(CHECKER_TYPE, "Check type", ArgumentType.CHECK_TYPE))
     }
 
     /**
@@ -238,5 +238,9 @@ abstract class SafetyProperty: AbstractProperty() {
                 }
             }
         }
+    }
+
+    companion object {
+        const val CHECKER_TYPE = "check_type"
     }
 }

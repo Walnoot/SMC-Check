@@ -108,7 +108,7 @@ class ReceiveSyncProperty : SafetyProperty() {
 		// get ignore condition
 		val cond = config.parameters.getOrDefault(PARAM_IGNORE_CONDITION, "false")
 
-		return  "$missedVarName != 0 and !($cond)"
+		return  "$missedVarName == 0 or ($cond)"
 	}
 
 	override fun getParameters(): List<PropertyParameter> {

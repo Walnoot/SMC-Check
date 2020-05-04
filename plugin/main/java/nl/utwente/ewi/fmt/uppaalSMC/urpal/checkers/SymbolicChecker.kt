@@ -14,8 +14,8 @@ class SymbolicChecker(doc: Document) : ReachabilityChecker(doc) {
         val tDoc = toDocument(nsta)
         val tSys = UppaalUtil.compile(tDoc)
 
-        // symbolic query, in all states the safety condition is false
-        val query = "E<> ($condition)"
+        // symbolic query, in all states the safety condition is true
+        val query = "E<> !($condition)"
         println(query)
 
         val (qr, t) = AbstractProperty.engineQuery(tSys, query, "trace 2")

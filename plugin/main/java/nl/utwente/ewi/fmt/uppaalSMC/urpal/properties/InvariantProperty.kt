@@ -8,7 +8,7 @@ class InvariantProperty : SafetyProperty() {
     override fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String {
         val cond = config.parameters["condition"] ?: error("Missing parameter 'condition'")
 
-        return "!($cond)"
+        return "$cond"
     }
 
     override fun getParameters(): List<PropertyParameter> {

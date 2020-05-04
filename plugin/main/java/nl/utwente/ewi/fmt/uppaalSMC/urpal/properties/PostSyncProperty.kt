@@ -6,6 +6,7 @@ import nl.utwente.ewi.fmt.uppaalSMC.urpal.util.ValidationSpec
 import org.muml.uppaal.declarations.Variable
 import org.muml.uppaal.declarations.global.ChannelPriority
 import org.muml.uppaal.declarations.global.GlobalFactory
+import org.muml.uppaal.declarations.system.SystemFactory
 import org.muml.uppaal.templates.LocationKind
 import org.muml.uppaal.templates.SynchronizationKind
 import org.muml.uppaal.templates.TemplatesFactory
@@ -13,10 +14,14 @@ import org.muml.uppaal.templates.TemplatesFactory
 @SanityCheck(name = "Synchronization post-condition", shortName = "sync-post")
 class PostSyncProperty : SafetyProperty() {
     override fun translateNSTA(nsta: NSTA, config: ValidationSpec.PropertyConfiguration): String {
+        // could add check to see if channel exists and is broadcast
+
         val channel = config.parameters["channel"]!!
         val condition = config.parameters["condition"]!!
 
-        addCheckAutomaton(nsta, UppaalUtil.createVariable(channel))
+        val isConcreteChecking = config.parameters[SafetyProperty.CHECKER_TYPE] == "concrete"
+
+        addCheckAutomaton(nsta, UppaalUtil.createVariable(channel), isConcreteChecking)
 
         return "$TEMPLATE_NAME.$CHECK_LOCATION_NAME imply $condition"
     }
@@ -27,9 +32,11 @@ class PostSyncProperty : SafetyProperty() {
      * channel with the highest priority, which ensures that no other process is able to take a transition while this
      * automaton is in the check location.
      */
-    private fun addCheckAutomaton(nsta: NSTA, channelVariable: Variable) {
-        val template = TemplatesFactory.eINSTANCE.createTemplate()
-        template.name = TEMPLATE_NAME
+    private fun addCheckAutomaton(nsta: NSTA, channelVariable: Variable, concreteChecking: Boolean) {
+        val template = UppaalUtil.createTemplate(nsta, TEMPLATE_NAME)
+
+        // add template to system declaration
+        nsta.systemDeclarations.system.instantiationList.last().template.add(template)
 
         val waitLocation = UppaalUtil.createLocation(template, "Wait")
         template.init = waitLocation
@@ -38,19 +45,25 @@ class PostSyncProperty : SafetyProperty() {
         val checkLocation = UppaalUtil.createLocation(template, CHECK_LOCATION_NAME)
         checkLocation.locationTimeKind = LocationKind.COMMITED
 
-        val priorityChannel = addPriorityChannel(nsta)
-
         // enter check location when the broadcast is sent
         val receiveEdge = UppaalUtil.createEdge(waitLocation, checkLocation)
         receiveEdge.synchronization = TemplatesFactory.eINSTANCE.createSynchronization()
         receiveEdge.synchronization.channelExpression = UppaalUtil.createIdentifier(channelVariable)
         receiveEdge.synchronization.kind = SynchronizationKind.RECEIVE
 
-        // add return transition with the priority synchronization
+        // add return transition
         val returnEdge = UppaalUtil.createEdge(checkLocation, waitLocation)
-        returnEdge.synchronization = TemplatesFactory.eINSTANCE.createSynchronization()
-        returnEdge.synchronization.channelExpression = UppaalUtil.createIdentifier(priorityChannel)
-        returnEdge.synchronization.kind = SynchronizationKind.SEND
+
+        if (!concreteChecking) {
+            // if SMC is used for checking, channel priorities are not supported. The best we can do is mark the check
+            // location as committed. This leaves the possibility for another process to take a switch transition from
+            // a committed location, potentially causing false negatives in specific circumstances.
+
+            val priorityChannel = addPriorityChannel(nsta)
+            returnEdge.synchronization = TemplatesFactory.eINSTANCE.createSynchronization()
+            returnEdge.synchronization.channelExpression = UppaalUtil.createIdentifier(priorityChannel)
+            returnEdge.synchronization.kind = SynchronizationKind.SEND
+        }
     }
 
     /**

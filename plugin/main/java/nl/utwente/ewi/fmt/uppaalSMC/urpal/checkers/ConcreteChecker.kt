@@ -17,7 +17,7 @@ class ConcreteChecker(doc: Document) : ReachabilityChecker(doc) {
         val numSims = 1000
 
         // simulate N times, filter on the unsafe condition, and stop after one trace is found
-        val query = "simulate [<=$simTime;$numSims] {0} :1: ($condition)"
+        val query = "simulate [<=$simTime;$numSims] {0} :1: (!($condition))"
         println(query)
 
         val (qr, t) = AbstractProperty.engineQueryConcrete(tSys, query, "trace 1")

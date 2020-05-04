@@ -38,6 +38,15 @@ sourceSets {
             srcDir 'plugin/main/java'
         }
     }
+//    test {
+//        java {
+//            srcDir 'plugin/test/java'
+//        }
+//
+//        resources {
+//            srcDir 'test/resources'
+//        }
+//    }
 }
 
 task fatJar(type: Jar) {
@@ -85,6 +94,10 @@ compileTestKotlin {
         jvmTarget = "1.8"
     }
 }
+
+//test {
+//    useJUnit()
+//}
 
 compileJava {
     targetCompatibility = 1.8

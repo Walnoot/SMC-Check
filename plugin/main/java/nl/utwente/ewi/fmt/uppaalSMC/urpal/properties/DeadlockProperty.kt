@@ -27,9 +27,9 @@ class DeadlockProperty : SafetyProperty() {
         }
 
         val query = if (locs.isEmpty()) {
-            "deadlock"
+            "!deadlock"
         } else {
-            "deadlock and not (${locs.joinToString(" or ")})"
+            "!(deadlock and not (${locs.joinToString(" or ")}))"
         }
 
         return query
