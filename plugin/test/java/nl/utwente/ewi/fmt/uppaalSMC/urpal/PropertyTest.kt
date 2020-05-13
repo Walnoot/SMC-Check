@@ -19,13 +19,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 class PropertyTest {
-    fun loadDoc(file: String) : Document {
-        val xml = String(Files.readAllBytes(File("test/resources/$file").absoluteFile.toPath())).replace(Regex("<!DOCTYPE.*>"), "")
-        val doc = XMLReader(CharSequenceInputStream(xml, "UTF-8")).parse(PrototypeDocument())
-
-        return doc;
-    }
-
     fun setSystemDeclaration(doc: Document, decl: String) {
         doc.setProperty("system", decl)
     }
@@ -63,5 +56,14 @@ class PropertyTest {
 
         // check concrete
         runCheck(doc, PostSyncProperty(), true, Pair("channel", "a"), Pair("condition", "true"), Pair("check_type", "concrete"))
+    }
+
+    companion object {
+        fun loadDoc(file: String) : Document {
+            val xml = String(Files.readAllBytes(File("test/resources/$file").absoluteFile.toPath())).replace(Regex("<!DOCTYPE.*>"), "")
+            val doc = XMLReader(CharSequenceInputStream(xml, "UTF-8")).parse(PrototypeDocument())
+
+            return doc;
+        }
     }
 }

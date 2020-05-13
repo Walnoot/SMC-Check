@@ -92,6 +92,19 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         try {
+            // add declarations of built-in functions to the document so that NSTAs with references to those functions
+            // can be parsed correctly. This is a workaround, the proper way to fix the issue would be to change the
+            // EMF model and parser to handle float functions. Since I have not yet mastered the arcane and dark arts of
+            // building EMF projects, this hack will have to do.
+            String decl = (String) d.getPropertyValue("declaration");
+            String newDecl = decl;
+            for (String func : UppaalUtil.INSTANCE.getBUILT_IN_FUNCTIONS()) {
+                // the type or parameters of the stub function don't actually matter, as long as there exists any function
+                // with the name of the built-in func
+                newDecl += "\nvoid " + func + "(){}";
+            }
+            d.setProperty("declaration", newDecl);
+
             new XMLWriter(out).visitDocument(d);
             byte[] ba = out.toByteArray();
 //            System.out.println("input: ");
@@ -100,6 +113,9 @@ public class MainUI extends JPanel implements Plugin, PluginWorkspace, PropertyC
 
             Resource resource = rs.createResource(URI.createURI("dummy:/" + System.currentTimeMillis() + ".xml"), null);
             resource.load(in, rs.getLoadOptions());
+
+            //restore original declarations
+            d.setProperty("declaration", decl);
 
             return (NSTA) resource.getContents().get(0);
         } catch (Exception e) {

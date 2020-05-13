@@ -44,8 +44,9 @@ abstract class ReachabilityChecker(val doc: Document) {
 
         var template = doc.templates
         while (template != null) {
-            val locs = UppaalUtil.getLocations(doc, template.getPropertyValue("name") as String)
-            val tLocs = UppaalUtil.getLocations(tDoc, template.getPropertyValue("name") as String)
+            val templateName = template.getPropertyValue("name") as String
+            val locs = UppaalUtil.getLocations(doc, templateName)
+            val tLocs = UppaalUtil.getLocations(tDoc, templateName)
             for (i in locs.indices) {
                 val origLoc = locs[i]
                 val transLoc = tLocs[i]
@@ -57,8 +58,9 @@ abstract class ReachabilityChecker(val doc: Document) {
                 }
             }
 
-            val edges = UppaalUtil.getEdges(doc, template.getPropertyValue("name") as String)
-            val tEdges = UppaalUtil.getEdges(tDoc, template.getPropertyValue("name") as String)
+            val edges = UppaalUtil.getEdges(doc, templateName)
+            val tEdges = UppaalUtil.getEdges(tDoc, templateName)
+
             for (i in edges.indices) {
                 val origEdge = edges[i]
                 val transEdge = tEdges[i]
@@ -86,8 +88,8 @@ abstract class ReachabilityChecker(val doc: Document) {
                 }
             }
 
-            val branches = UppaalUtil.getBranches(doc, template.getPropertyValue("name") as String)
-            val tBranches = UppaalUtil.getBranches(tDoc, template.getPropertyValue("name") as String)
+            val branches = UppaalUtil.getBranches(doc, templateName)
+            val tBranches = UppaalUtil.getBranches(tDoc, templateName)
             for (i in branches.indices) {
                 setCoords(branches[i], tBranches[i])
             }

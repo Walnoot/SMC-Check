@@ -372,7 +372,26 @@ object UppaalUtil {
 
 //        println(xml)
 
-        return XMLReader(CharSequenceInputStream(xml, "UTF-8")).parse(doc)!!
+        val doc =  XMLReader(CharSequenceInputStream(xml, "UTF-8")).parse(doc)!!
+
+        // Strip stub functions from declarations
+
+        var decl = doc.getPropertyValue("declaration") as String
+
+        /*
+        Expected format of generated functions:
+        void <name>() {
+        }
+        This will break if the formatting of the NSTA serialisation changes.
+         */
+
+        for (func in BUILT_IN_FUNCTIONS) {
+            decl = decl.replace("void $func() {\n}", "")
+        }
+
+        doc.setProperty("declaration", decl.toString())
+
+        return doc
     }
 
     fun transformTrace(ts: SymbolicTrace, origSys: UppaalSystem): SymbolicTrace {
@@ -525,4 +544,6 @@ object UppaalUtil {
             }
         }
     }
+
+    val BUILT_IN_FUNCTIONS = listOf("abs", "fabs", "fmod", "fma", "fmax", "fmin", "exp", "exp2", "expm1", "ln", "log", "log10", "log2", "log1p", "pow", "sqrt", "cbrt", "hypot", "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "asinh", "acosh", "atanh", "erf", "erfc", "tgamma", "lgamma", "ceil", "floor", "trunc", "round", "fint", "ldexp", "ilogb", "logb", "nextafter", "copysign", "signbit", "random", "random_arcsine", "random_beta", "random_gamma", "random_normal", "random_poisson", "random_weibull", "random_tri")
 }
