@@ -5,29 +5,6 @@ Applying sanity checks to find commonly made errors in Uppaal SMC models. This r
 
 Go to your Uppaal installation folder, and create a 'plugings' directory if it does not already exist. Download the latest [release](https://github.com/Walnoot/SMC-Check/releases) and place it in the plugin folder. The next time Uppaal is launched an additional tab should be present in the editor. 
 
-### Building
-##### Repository initialization
-Clone the repository with the ```--recurse-submodules``` argument in order to automatically initialize and update each submodule in the repository (recommended).
-Or execute ```git submodule update --init --recursive``` in the repository after cloning normally to achieve the same.
-##### Environment variables
-Set an environment variable ```UPPAAL_ROOT``` to the root folder of the UPPAAL distribution (i.e. ```$UPPAAL_ROOT/uppaal.jar``` should point to the main jar file). Make sure you use Uppaal version 4.1.23 or higher.
-##### Ensure plugin folder exists
-Plugins should be placed in the plugins directory inside Uppaal. Make sure that ```$UPPAAL_ROOT/plugins/``` exists, make it if it doesn't exist.
-
-### Available commands
-> Windows should ```gradlew.bat``` instead of ```./gradlew```  
-> **Use Java 8 (due to Xtend compatability issues with new Java versions)**
-##### Build
-Run ```./gradlew build``` to build the plugin. The plugin can be found ```build/libs/```
-##### Build and deploy local
-Run ```./gradlew deployLocal``` to build and copy the plugin into the plugin directory of Uppaal.
-##### Build, deploy and run
-To build the plugin, copy it to the Uppaal plugins directory, and run Uppaal afterwards, use ```./gradlew runUppaal```
-
-##### IDE setup
-The project is set-up using Gradle, meaning that any Java IDE with a Gradle plugin should work.  
-The base language is Java, however, support for Kotlin is present.
-
 ### Usage
 
 The plugin adds a tab to the Uppaal editor where the user can specify a list of checks to which the model must conform. These checks can either be model checked using Uppaal SMC (meaning simulations of the model are used to find unsafe states), or using the Uppaal model checker (which uses an abstraction to convert the Uppaal SMC model to a pure Uppaal timed automata).
@@ -75,6 +52,30 @@ Limit the model to be unable to take time transitions after a specified amount o
 ### Known issues
 
 When loading a trace in the editor, Uppaal will show a prompt asking to asking to upload the new model. If this happens, press no (otherwise the original, unchanged model is loaded and the trace cannot be shown).
+
+
+### Building
+##### Repository initialization
+Clone the repository with the ```--recurse-submodules``` argument in order to automatically initialize and update each submodule in the repository (recommended).
+Or execute ```git submodule update --init --recursive``` in the repository after cloning normally to achieve the same.
+##### Environment variables
+Set an environment variable ```UPPAAL_ROOT``` to the root folder of the UPPAAL distribution (i.e. ```$UPPAAL_ROOT/uppaal.jar``` should point to the main jar file). Make sure you use Uppaal version 4.1.23 or higher.
+##### Ensure plugin folder exists
+Plugins should be placed in the plugins directory inside Uppaal. Make sure that ```$UPPAAL_ROOT/plugins/``` exists, make it if it doesn't exist.
+
+### Available commands
+> Windows should ```gradlew.bat``` instead of ```./gradlew```  
+> **Use Java 8 (due to Xtend compatability issues with new Java versions)**
+##### Build
+Run ```./gradlew build``` to build the plugin. The plugin can be found ```build/libs/```
+##### Build and deploy local
+Run ```./gradlew deployLocal``` to build and copy the plugin into the plugin directory of Uppaal.
+##### Build, deploy and run
+To build the plugin, copy it to the Uppaal plugins directory, and run Uppaal afterwards, use ```./gradlew runUppaal```
+
+##### IDE setup
+The project is set-up using Gradle, meaning that any Java IDE with a Gradle plugin should work.  
+The base language is Java, however, support for Kotlin is present.
 
 ### Documentation
 See the [wiki](https://github.com/utwente-fmt/UrPal/wiki)
